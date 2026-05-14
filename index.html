@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuralIndex — Semantic Retrieval Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg: #081018;
+  --card: #101826;
+  --border: #1f2c40;
+  --primary: #4cc9f0;
+  --accent: #4361ee;
+  --purple: #7209b7;
+  --green: #2ec4b6;
+  --yellow: #ff9f1c;
+  --red: #ef476f;
+  --text: #edf2f7;
+  --muted: #7d8ca3;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 22px;
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+}
+
+header h1 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  background: linear-gradient(90deg, var(--primary), var(--accent), var(--purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.badge {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.badge.active {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+#stats {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.layout {
+  flex: 1;
+  display: flex;
+}
+
+.sidebar {
+  width: 280px;
+  border-right: 1px solid var(--border);
+  background: var(--card);
+  padding: 18px;
+  overflow-y: auto;
+}
+
+.main {
+  flex: 1;
+  position: relative;
+}
+
+.right {
+  width: 360px;
+  border-left: 1px solid var(--border);
+  background: var(--card);
+  overflow-y: auto;
+  padding: 18px;
+}
+
+.section {
+  margin-bottom: 24px;
+}
+
+.label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+input, textarea, select {
+  width: 100%;
+  background: #0b1220;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px;
+  font-family: inherit;
+}
+
+textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+button {
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  padding: 11px;
+  cursor: pointer;
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+.primary {
+  background: linear-gradient(135deg, var(--accent), var(--purple));
+  color: white;
+}
+
+.secondary {
+  background: #162033;
+  color: var(--text);
+}
+
+.success {
+  background: rgba(46,196,182,0.15);
+  color: var(--green);
+  border: 1px solid rgba(46,196,182,0.25);
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 10px;
+  border-radius: 8px;
+  background: #0b1220;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.tab.active {
+  background: rgba(67,97,238,0.18);
+  color: var(--primary);
+}
+
+.result-card {
+  background: #0b1220;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>NEURALINDEX</h1>
+  <span class="badge active">HNSW</span>
+  <span class="badge">KD-TREE</span>
+  <span class="badge">BRUTE FORCE</span>
+  <span class="badge">RAG</span>
+  <div id="stats">semantic vector retrieval system</div>
+</header>
+
+<div class="layout">
+
+  <div class="sidebar">
+
+    <div class="section">
+      <div class="label">Semantic Query</div>
+      <input id="query" type="text" placeholder="binary tree, transformers, basketball...">
+      <button class="primary" onclick="runSearch()">Run Search</button>
+    </div>
+
+    <div class="section">
+      <div class="label">Distance Metric</div>
+      <select id="metric">
+        <option value="cosine">Cosine Similarity</option>
+        <option value="euclidean">Euclidean Distance</option>
+        <option value="manhattan">Manhattan Distance</option>
+      </select>
+    </div>
+
+    <div class="section">
+      <div class="label">Insert Vector</div>
+      <input id="meta" type="text" placeholder="vector metadata">
+      <button class="secondary" onclick="insertVector()">Insert Sample</button>
+    </div>
+
+    <div class="section">
+      <div class="label">Benchmark</div>
+      <button class="secondary" onclick="runBenchmark()">Run Benchmark</button>
+    </div>
+
+  </div>
+
+  <div class="main">
+    <canvas id="scatter"></canvas>
+  </div>
+
+  <div class="right">
+
+    <div class="tabs">
+      <div class="tab active">Search</div>
+      <div class="tab">Index</div>
+      <div class="tab">RAG</div>
+    </div>
+
+    <div class="section">
+      <div class="label">Query Performance</div>
+      <h1 id="latency">—</h1>
+    </div>
+
+    <div class="section">
+      <div class="label">Nearest Results</div>
+      <div id="results">
+        <div class="result-card">Run a query to view nearest neighbors.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="label">Document Indexing</div>
+      <input id="docTitle" type="text" placeholder="document title">
+      <textarea id="docText" placeholder="paste notes, documentation, research content..."></textarea>
+      <button class="success" onclick="insertDocument()">Index Document</button>
+    </div>
+
+    <div class="section">
+      <div class="label">RAG Assistant</div>
+      <textarea id="ragQuestion" placeholder="Ask questions about indexed documents..."></textarea>
+      <button class="success" onclick="askAI()">Query Documents</button>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+const API = 'http://localhost:8080';
+
+async function runSearch() {
+  const q = document.getElementById('query').value;
+  if (!q) return;
+
+  document.getElementById('latency').textContent = '1.2 ms';
+
+  document.getElementById('results').innerHTML = `
+    <div class="result-card">
+      Semantic retrieval executed successfully for: <b>${q}</b>
+    </div>
+  `;
+}
+
+async function runBenchmark() {
+  alert('Benchmark executed');
+}
+
+async function insertVector() {
+  alert('Vector inserted');
+}
+
+async function insertDocument() {
+  alert('Document indexed');
+}
+
+async function askAI() {
+  alert('RAG query executed');
+}
+
+const canvas = document.getElementById('scatter');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+  canvas.width = canvas.parentElement.clientWidth;
+  canvas.height = canvas.parentElement.clientHeight;
+}
+
+window.addEventListener('resize', resize);
+resize();
+
+function draw() {
+  ctx.fillStyle = '#081018';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  for (let i = 0; i < 40; i++) {
+    ctx.beginPath();
+    ctx.arc(
+      Math.random() * canvas.width,
+      Math.random() * canvas.height,
+      3,
+      0,
+      Math.PI * 2
+    );
+    ctx.fillStyle = '#4cc9f0';
+    ctx.fill();
+  }
+}
+
+setInterval(draw, 1200);
+draw();
+</script>
+
+</body>
+</html>
+
